@@ -186,3 +186,7 @@ td.r, th.r { text-align: right; }
   .sidebar, .topbar .btn, .no-print { display: none !important; }
   body { background: #fff; color: #000; }
 }
+
+.gap12 { gap: 12px; }
+.span2 { grid-column: span 2; }
+@media (max-width: 560px) { .span2 { grid-column: auto; } }
