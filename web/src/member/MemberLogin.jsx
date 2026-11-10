@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { get, post } from '../lib/api.js';
+import { get, post, put } from '../lib/api.js';
 import { useI18n, LangToggle } from '../lib/i18n.jsx';
 import { Input, useAction } from '../components/ui.jsx';
 
 export default function MemberLogin({ slug, onLogin }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [gym, setGym] = useState(null);
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
@@ -22,7 +22,11 @@ export default function MemberLogin({ slug, onLogin }) {
   };
   const verify = async (e) => {
     e.preventDefault();
-    if (await run(() => post('/m/auth/verify', { gym: slug, phone, code }))) onLogin();
+    const r = await run(() => post('/m/auth/verify', { gym: slug, phone, code }));
+    if (!r) return;
+    // Keep the language chosen on this screen as the member's app and WhatsApp language.
+    if (r.member.language !== lang) await put('/m/me', { language: lang }).catch(() => {});
+    onLogin();
   };
 
   return (
