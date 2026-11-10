@@ -26,7 +26,7 @@ final class Auth
             'billing.manage', 'sessions.view', 'sessions.manage', 'leads.view', 'leads.write', 'classes.view', 'classes.manage', 'pt.manage',
             'staff.view', 'store.view', 'store.sell', 'store.manage', 'campaigns.view', 'campaigns.send', 'reports.view', 'reports.finance',
             'devices.manage', 'settings.view', 'workouts.manage', 'insights.view'],
-        'front_desk' => ['dashboard.view', 'members.view', 'members.write', 'billing.view', 'billing.collect', 'sessions.view', 'sessions.manage',
+        'front_desk' => ['dashboard.view', 'staff.view', 'members.view', 'members.write', 'billing.view', 'billing.collect', 'sessions.view', 'sessions.manage',
             'leads.view', 'leads.write', 'classes.view', 'pt.manage', 'store.view', 'store.sell'],
         'trainer' => ['dashboard.view', 'members.view', 'sessions.view', 'classes.view', 'pt.manage', 'workouts.manage', 'leads.view'],
         'staff' => ['dashboard.view'],
