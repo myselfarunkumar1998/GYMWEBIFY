@@ -117,7 +117,7 @@ export default function PunchScreen() {
           <h2>Recent punches</h2>
           {d?.punches.slice(0, 8).map((p) => (
             <div key={p.id} className="listrow"><span className={'dot' + (p.out_at ? ' grey' : '')} /><span className="grow">{p.name}</span>
-              <span className="small muted">{p.out_at ? `OUT ${time(p.out_at)} · ${mins(p.duration_min)}` : `IN ${time(p.in_at)}`}</span></div>
+              <span className="small muted">{p.auto_closed ? 'No OUT punch' : p.out_at ? `OUT ${time(p.out_at)} · ${mins(p.duration_min)}` : `IN ${time(p.in_at)}`}</span></div>
           ))}
         </div>
       </div>

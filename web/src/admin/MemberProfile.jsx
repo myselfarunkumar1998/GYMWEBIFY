@@ -24,7 +24,7 @@ export default function MemberProfile() {
   const cur = m.current;
   const daysLeft = cur ? daysUntil(cur.end_date) : null;
   const total = cur ? daysUntil(cur.end_date) - daysUntil(cur.start_date) + 1 : 1;
-  const status = m.open_session ? <Pill>Inside now · {mins(Math.round((Date.now() - new Date(m.open_session.in_at.replace(' ', 'T'))) / 60000))}</Pill>
+  const status = m.open_session ? <Pill>Inside now · {mins(m.open_session.elapsed_min)}</Pill>
     : m.is_blocked ? <Pill tone="warn">Blocked</Pill> : m.plan_status === 'active' ? <Pill>Active</Pill> : <Pill tone={m.plan_status === 'frozen' ? 'grey' : 'warn'}>{titleCase(m.plan_status)}</Pill>;
   const done = () => { setModal(null); reload(); };
   const risk = m.churn_score === null ? '—' : m.churn_score >= 75 ? 'High' : m.churn_score >= 50 ? 'Medium' : 'Low';

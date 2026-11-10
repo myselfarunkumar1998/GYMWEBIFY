@@ -56,7 +56,7 @@ export default function Sessions() {
                   <td>{x.member_id ? <Link to={'/admin/members/' + x.member_id} style={{ color: 'inherit', textDecoration: 'none' }}><div className="col" style={{ gap: 0 }}><span style={{ fontWeight: 500 }}>{x.name}</span><span className="small muted">{x.member_code}</span></div></Link> : <span style={{ fontWeight: 500 }}>{x.staff_name}</span>}</td>
                   <td className="num">{time(x.in_at)}</td>
                   <td className={'num ' + (!x.out_at ? 'lime' : x.auto_closed ? 'warn' : '')}>{!x.out_at ? 'Inside' : x.auto_closed ? 'Auto-closed' : time(x.out_at)}</td>
-                  <td className="num" style={{ fontWeight: 600 }}>{!x.out_at ? mins(Math.round((Date.now() - new Date(x.in_at.replace(' ', 'T'))) / 60000)) : mins(x.duration_min)}</td>
+                  <td className="num" style={{ fontWeight: 600 }}>{!x.out_at ? mins(x.elapsed_min) : mins(x.duration_min)}</td>
                   <td className="t2">{titleCase(x.method)}{x.device_name ? ` · ${x.device_name}` : ''}</td>
                   <td className={'small ' + (x.auto_closed || x.method === 'manual' ? 'warn' : 'muted')}>{x.note || (x.method === 'manual' && x.created_by_name ? `Added by ${x.created_by_name}` : '')}</td>
                   <td className="r">{s.can('sessions.manage') && (!x.out_at

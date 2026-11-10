@@ -16,7 +16,7 @@ const Platform = lazy(() => import('./public/Platform.jsx'));
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Suspense fallback={<Loading />}>
         <Routes>
           <Route path="/" element={<Navigate to="/admin" replace />} />

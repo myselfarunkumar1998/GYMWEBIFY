@@ -171,7 +171,7 @@ final class MembersController extends Base
         $m['pt'] = DB::one("SELECT ms.*, p.name AS plan_name FROM memberships ms JOIN plans p ON p.id = ms.plan_id WHERE ms.member_id = ? AND ms.kind = 'pt' AND ms.status = 'active' ORDER BY ms.end_date DESC LIMIT 1", [$id]);
         $m['trainer'] = $m['trainer_id'] ? DB::one('SELECT id, name FROM users WHERE id = ?', [$m['trainer_id']]) : null;
         $m['referrer'] = $m['referred_by'] ? DB::one('SELECT id, name, member_code FROM members WHERE id = ?', [$m['referred_by']]) : null;
-        $m['open_session'] = DB::one('SELECT * FROM attendance_sessions WHERE member_id = ? AND out_at IS NULL AND DATE(in_at) = CURDATE()', [$id]);
+        $m['open_session'] = DB::one('SELECT *, TIMESTAMPDIFF(MINUTE, in_at, NOW()) AS elapsed_min FROM attendance_sessions WHERE member_id = ? AND out_at IS NULL AND DATE(in_at) = CURDATE()', [$id]);
         $monthStart = date('Y-m-01');
         $m['stats'] = DB::one('SELECT COUNT(*) visits, ROUND(AVG(duration_min)) avg_min, COALESCE(SUM(duration_min),0) total_min FROM attendance_sessions WHERE member_id = ? AND in_at >= ?', [$id, $monthStart]);
         $m['visits'] = DB::all('SELECT id, in_at, out_at, duration_min, method, auto_closed FROM attendance_sessions WHERE member_id = ? ORDER BY in_at DESC LIMIT 30', [$id]);

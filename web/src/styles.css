@@ -190,3 +190,8 @@ td.r, th.r { text-align: right; }
 .gap12 { gap: 12px; }
 .span2 { grid-column: span 2; }
 @media (max-width: 560px) { .span2 { grid-column: auto; } }
+
+.iconbtn.menu-btn, .row.menu-btn { display: none; }
+@media (max-width: 860px) { .iconbtn.menu-btn { display: inline-flex; } .row.menu-btn { display: flex; } }
+
+.phone .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }

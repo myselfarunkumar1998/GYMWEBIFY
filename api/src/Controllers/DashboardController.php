@@ -23,7 +23,7 @@ final class DashboardController extends Base
         $collected = $finance ? DB::all("SELECT p.mode, SUM(p.amount) amt FROM payments p JOIN invoices i ON i.id = p.invoice_id WHERE p.gym_id = ? AND DATE(p.paid_at) = ? $bfi GROUP BY p.mode", [$g, $today]) : [];
         $dues = $finance ? DB::one("SELECT COALESCE(SUM(i.balance),0) amt, COUNT(DISTINCT i.member_id) members FROM invoices i WHERE i.gym_id = ? AND i.status IN ('unpaid','partial') $bfi", [$g]) : null;
 
-        $punches = DB::all("SELECT s.id, s.in_at, s.out_at, s.duration_min, s.auto_closed, s.method, m.id AS member_id, m.name, m.member_code,
+        $punches = DB::all("SELECT s.id, s.in_at, TIMESTAMPDIFF(MINUTE, s.in_at, NOW()) AS elapsed_min, s.out_at, s.duration_min, s.auto_closed, s.method, m.id AS member_id, m.name, m.member_code,
               (SELECT p.name FROM memberships ms JOIN plans p ON p.id = ms.plan_id WHERE ms.member_id = m.id AND ms.kind = 'membership' AND ms.status IN ('active','frozen') ORDER BY ms.end_date DESC LIMIT 1) AS plan_name,
               (SELECT ms.end_date FROM memberships ms WHERE ms.member_id = m.id AND ms.kind = 'membership' AND ms.status IN ('active','frozen') ORDER BY ms.end_date DESC LIMIT 1) AS end_date,
               (SELECT COALESCE(SUM(i.balance),0) FROM invoices i WHERE i.member_id = m.id AND i.status IN ('unpaid','partial')) AS dues

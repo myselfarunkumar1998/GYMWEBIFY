@@ -102,7 +102,7 @@ final class MemberAppController extends Base
         $pt = DB::one("SELECT ms.sessions_total - ms.sessions_used AS left_count FROM memberships ms WHERE ms.member_id = ? AND ms.kind = 'pt' AND ms.status = 'active' ORDER BY ms.end_date DESC LIMIT 1", [$id]);
         $trainer = $this->me()['trainer_id'] ? DB::val('SELECT name FROM users WHERE id = ?', [$this->me()['trainer_id']]) : null;
         return [
-            'session' => DB::one('SELECT id, in_at FROM attendance_sessions WHERE member_id = ? AND out_at IS NULL AND DATE(in_at) = CURDATE()', [$id]),
+            'session' => DB::one('SELECT id, in_at, TIMESTAMPDIFF(SECOND, in_at, NOW()) AS elapsed_sec FROM attendance_sessions WHERE member_id = ? AND out_at IS NULL AND DATE(in_at) = CURDATE()', [$id]),
             'week' => $week, 'week_visits' => count(array_filter($week, fn($w) => $w['minutes'] > 0)),
             'plan' => $ms ? ['name' => $ms['plan_name'], 'start_date' => $ms['start_date'], 'end_date' => $ms['end_date'], 'status' => Memberships::statusFor($ms, $this->graceDays()),
                 'days_left' => max(0, Util::daysBetween(Util::today(), $ms['end_date'])), 'total_days' => Util::daysBetween($ms['start_date'], $ms['end_date']) + 1, 'autopay' => (bool)$ms['autopay']] : null,

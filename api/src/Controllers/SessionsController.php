@@ -13,7 +13,7 @@ final class SessionsController extends Base
         $g = $this->gym();
         $date = $req->q('date') ? V::check(['d' => $req->q('date')], ['d' => 'date'])['d'] : Util::today();
         [$bf] = $this->branchFilter($req, 's.branch_id');
-        $sql = "SELECT s.*, m.name, m.member_code, u.name AS staff_name, d.name AS device_name, b.name AS branch_name, cb.name AS created_by_name
+        $sql = "SELECT s.*, TIMESTAMPDIFF(MINUTE, s.in_at, NOW()) AS elapsed_min, m.name, m.member_code, u.name AS staff_name, d.name AS device_name, b.name AS branch_name, cb.name AS created_by_name
             FROM attendance_sessions s LEFT JOIN members m ON m.id = s.member_id LEFT JOIN users u ON u.id = s.user_id LEFT JOIN devices d ON d.id = s.device_id
             LEFT JOIN branches b ON b.id = s.branch_id LEFT JOIN users cb ON cb.id = s.created_by
             WHERE s.gym_id = ? AND DATE(s.in_at) = ? $bf";

@@ -81,7 +81,7 @@ export default function Dashboard({ notes }) {
                         <td><div className="col" style={{ gap: 0 }}><span style={{ fontWeight: 500 }}>{p.name}</span><span className="small muted">{p.member_code}</span></div></td>
                         <td className="num">{time(p.in_at)}</td>
                         <td className={'num' + (inside ? ' lime' : p.auto_closed ? ' warn' : '')}>{inside ? t('Inside') : p.auto_closed ? 'Auto-closed' : time(p.out_at)}</td>
-                        <td className="num" style={{ fontWeight: 600 }}>{mins(inside ? Math.round((Date.now() - new Date(p.in_at.replace(' ', 'T'))) / 60000) : p.duration_min)}</td>
+                        <td className="num" style={{ fontWeight: 600 }}>{mins(inside ? p.elapsed_min : p.duration_min)}</td>
                         <td>{warn ? <Pill tone="warn">{warn}</Pill> : <Pill>{p.plan_name || 'No plan'}</Pill>}</td>
                       </tr>
                     );

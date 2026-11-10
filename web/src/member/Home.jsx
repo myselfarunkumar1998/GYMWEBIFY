@@ -5,10 +5,11 @@ import { money, hm, dayDate, DOW, parseDate } from '../lib/format.js';
 import { ErrorBox, Icon, Loading, Progress, useApi, usePoll } from '../components/ui.jsx';
 import { useMember } from './MemberApp.jsx';
 
-function Timer({ since }) {
+function Timer({ elapsed }) {
+  const [start] = useState(() => Date.now() - elapsed * 1000);
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
-  const s = Math.max(0, Math.floor((now - parseDate(since).getTime()) / 1000));
+  const s = Math.max(0, Math.floor((now - start) / 1000));
   const p = (n) => String(n).padStart(2, '0');
   return <span className="num" style={{ fontSize: 56, fontWeight: 700, lineHeight: 1 }}>{Math.floor(s / 3600)}:{p(Math.floor(s / 60) % 60)}:{p(s % 60)}</span>;
 }
@@ -36,14 +37,14 @@ export default function Home() {
       {d.session ? (
         <section className="card hero" style={{ borderRadius: 24 }} aria-label="Current session">
           <div className="row gap8" style={{ fontWeight: 600, fontSize: 13 }}><span className="dot" style={{ background: 'var(--bg)' }} />{t("You're in the gym")} · {t('since')} {hm(d.session.in_at.slice(11, 16))}</div>
-          <Timer since={d.session.in_at} />
+          <Timer elapsed={Number(d.session.elapsed_sec)} />
           <span className="small">{t('Punch out at the scanner when you leave. Your time is saved to your history.')}</span>
         </section>
       ) : d.plan && d.plan.status !== 'active' && d.plan.status !== 'upcoming' ? (
         <section className="card alert"><b>{d.plan.status === 'frozen' ? 'Your plan is frozen' : 'Your plan has ended'}</b><Link to={m.base + '/renew'} className="btn primary">{t('Renew')}</Link></section>
       ) : null}
       <section className="card" aria-labelledby="week-title" style={{ borderRadius: 20, padding: 16 }}>
-        <div className="row between"><h2 id="week-title" style={{ fontSize: 16 }}>{t('This week')}</h2><Link to={m.base + '/visits'} className="small muted" style={{ textDecoration: 'none' }}>{d.week_visits} {t('visits')} · {Math.floor(total / 60)}h {total % 60}m</Link></div>
+        <div className="row between"><h2 id="week-title" style={{ fontSize: 16 }}>{t('This week')}</h2><Link to={m.base + '/visits'} className="small muted" style={{ textDecoration: 'none' }}>{d.week_visits} {d.week_visits === 1 ? 'visit' : t('visits')} · {Math.floor(total / 60)}h {total % 60}m</Link></div>
         <div className="bars" style={{ height: 96, gap: 10 }} role="img" aria-label="Minutes trained per day this week">
           {d.week.map((w) => <div className="bar" key={w.date}><div className={w.minutes ? 'hi' : ''} style={{ height: w.minutes ? Math.round((w.minutes / max) * 72) : 4 }} /><span>{DOW[parseDate(w.date + ' 12:00').getDay()][0]}</span></div>)}
         </div>
