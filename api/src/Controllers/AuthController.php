@@ -14,7 +14,7 @@ final class AuthController extends Base
         RateLimit::hit('login-email:' . $d['email'], 10, 900);
         $u = DB::one('SELECT * FROM users WHERE email = ?', [$d['email']]);
         // Same work and the same message whether or not the account exists.
-        $hash = $u['password_hash'] ?? '$argon2id$v=19$m=65536,t=4,p=1$c29tZXNhbHRzb21lc2FsdA$Rk1VbW9ja0hhc2hGb3JUaW1pbmdFcXVhbGl0eUE';
+        $hash = $u['password_hash'] ?? '$argon2id$v=19$m=65536,t=4,p=1$WG9sc1kuaG1XcC42UTdyVg$oUacxRsyRE2GvihY5RKPrMGLk9lRZfl7h2DSpGJNgB0';
         $ok = password_verify($d['password'], $hash);
         if (!$u || $u['status'] !== 'active') throw new HttpException(401, 'Email or password is wrong', [], 'bad_credentials');
         if ($u['locked_until'] && strtotime($u['locked_until']) > time()) {

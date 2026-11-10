@@ -32,7 +32,7 @@ final class Http
         return [$code, (string)$res];
     }
 
-    public static function json(string $method, string $url, array $data = null, array $headers = []): array
+    public static function json(string $method, string $url, ?array $data = null, array $headers = []): array
     {
         [$code, $body] = self::request($method, $url, array_merge(['Content-Type: application/json', 'Accept: application/json'], $headers), $data === null ? null : json_encode($data, JSON_UNESCAPED_UNICODE));
         return [$code, json_decode($body, true) ?? ['raw' => $body]];

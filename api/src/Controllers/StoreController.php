@@ -99,7 +99,7 @@ final class StoreController extends Base
         $d = V::check($req->json(), ['items' => 'required|array', 'member_id' => 'nullable|int', 'customer_name' => 'nullable|string|max:120',
             'pay_mode' => 'nullable|in:cash,upi,card,credit', 'pay_reference' => 'nullable|string|max:100', 'pay_now' => 'nullable|bool']);
         if (!empty($d['member_id'])) $this->memberRow($d['member_id']);
-        $inv = self::sell($this->gym(), $d['items'], $d['member_id'] ?? null, $d['customer_name'] ?? ($d['member_id'] ? null : 'Walk-in'));
+        $inv = self::sell($this->gym(), $d['items'], $d['member_id'] ?? null, $d['customer_name'] ?? (!empty($d['member_id']) ? null : 'Walk-in'));
         if ($d['pay_now'] ?? true) {
             $total = (float)DB::val('SELECT total FROM invoices WHERE id = ?', [$inv]);
             Billing::recordPayment($this->gym(), $inv, $total, $d['pay_mode'] ?? 'cash', $d['pay_reference'] ?? null);

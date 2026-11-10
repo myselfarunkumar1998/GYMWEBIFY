@@ -39,6 +39,7 @@ final class Billing
             $gym = Util::gym($gymId);
             $inclusive = (bool)($gym['settings']['prices_include_gst'] ?? false);
             $date = $opt['date'] ?? Util::today();
+            $date = $date ?: Util::today();
             $member = !empty($opt['member_id']) ? DB::one('SELECT * FROM members WHERE id = ? AND gym_id = ?', [$opt['member_id'], $gymId]) : null;
             if (!empty($opt['member_id']) && !$member) throw HttpException::notFound('Member not found');
             $pos = $opt['place_of_supply'] ?? ($member['state_code'] ?? null) ?? $gym['state_code'];

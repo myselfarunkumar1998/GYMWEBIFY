@@ -35,9 +35,9 @@ final class Memberships
             }
             $invoiceId = Billing::createInvoice($gymId, $items, [
                 'member_id' => $memberId, 'kind' => $plan['kind'] === 'pt' ? 'pt' : 'membership',
-                'discount' => $opt['discount'] ?? 0, 'coupon' => $opt['coupon'] ?? null,
+                'discount' => $opt['discount'] ?? 0, 'coupon' => $opt['coupon'] ?? null, 'date' => $opt['invoice_date'] ?? null,
             ]);
-            $status = $start > Util::today() ? 'upcoming' : 'active';
+            $status = $start > Util::today() ? 'upcoming' : ($end < Util::today() ? 'expired' : 'active');
             $msId = DB::insert('memberships', [
                 'gym_id' => $gymId, 'member_id' => $memberId, 'plan_id' => $planId, 'kind' => $plan['kind'],
                 'start_date' => $start, 'end_date' => $end, 'price' => $plan['price'], 'status' => $status,

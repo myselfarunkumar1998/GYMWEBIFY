@@ -189,7 +189,7 @@ final class BillingController extends Base
         $m = $this->month($req);
         $rows = DB::all("SELECT invoice_no, invoice_date, customer_name, customer_gstin, place_of_supply, taxable, cgst, sgst, igst, total, status FROM invoices
             WHERE gym_id = ? AND DATE_FORMAT(invoice_date, '%Y-%m') = ? ORDER BY invoice_date, id", [$this->gym(), $m]);
-        $byRate = DB::all("SELECT it.gst_rate, it.hsn_sac, SUM(it.amount) AS gross, COUNT(*) lines FROM invoice_items it JOIN invoices i ON i.id = it.invoice_id
+        $byRate = DB::all("SELECT it.gst_rate, it.hsn_sac, SUM(it.amount) AS gross, COUNT(*) line_count FROM invoice_items it JOIN invoices i ON i.id = it.invoice_id
             WHERE i.gym_id = ? AND DATE_FORMAT(i.invoice_date, '%Y-%m') = ? AND i.status <> 'cancelled' GROUP BY it.gst_rate, it.hsn_sac", [$this->gym(), $m]);
         $active = array_filter($rows, fn($r) => $r['status'] !== 'cancelled');
         $tot = ['taxable' => 0, 'cgst' => 0, 'sgst' => 0, 'igst' => 0, 'total' => 0];

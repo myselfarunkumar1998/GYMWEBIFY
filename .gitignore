@@ -1,0 +1,10 @@
+node_modules/
+web/dist/
+api/config.php
+api/logs/
+api/uploads/*
+!api/uploads/.htaccess
+build/
+test-results/
+playwright-report/
+*.log

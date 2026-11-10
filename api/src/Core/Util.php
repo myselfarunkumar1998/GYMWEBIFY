@@ -27,7 +27,7 @@ final class Util
 
     public static function addDays(string $date, int $days): string
     {
-        return date('Y-m-d', strtotime("$date +$days days"));
+        return date('Y-m-d', strtotime(sprintf('%s %+d days', $date, $days)));
     }
 
     public static function daysBetween(string $a, string $b): int
