@@ -14,9 +14,27 @@ final class Config
         $env = getenv('GYMAPP_CONFIG');
         $list = [];
         if ($env) $list[] = $env;
-        $list[] = dirname(APP_ROOT, 2) . '/gymapp-config.php'; // ~/gymapp-config.php when api is public_html/api
+        $home = self::homeDir();
+        if ($home) {
+            // One config per site folder, kept above public_html so it is never web-reachable.
+            $list[] = $home . '/gymapp-config-' . self::siteKey() . '.php';
+        }
         $list[] = APP_ROOT . '/config.php';
         return $list;
+    }
+
+    /** The account home: the folder that contains public_html (e.g. /home2/cpuser). */
+    public static function homeDir(): ?string
+    {
+        $d = APP_ROOT;
+        while ($d !== '/' && $d !== '.' && basename($d) !== 'public_html') $d = dirname($d);
+        return basename($d) === 'public_html' ? dirname($d) : null;
+    }
+
+    /** Short name of the site folder, so several installs on one account keep separate configs. */
+    public static function siteKey(): string
+    {
+        return preg_replace('/[^A-Za-z0-9_-]/', '_', basename(dirname(APP_ROOT))) ?: 'site';
     }
 
     public static function load(): void

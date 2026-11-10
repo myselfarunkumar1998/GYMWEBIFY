@@ -51,8 +51,8 @@ $checks = [
     'mbstring' => extension_loaded('mbstring'),
     'Uploads folder writable' => is_writable(__DIR__ . '/uploads') || @mkdir(__DIR__ . '/uploads', 0750, true),
 ];
-$home = dirname(__DIR__, 2);
-$configPath = is_writable($home) ? $home . '/gymapp-config.php' : __DIR__ . '/config.php';
+$home = Config::homeDir();
+$configPath = $home && is_writable($home) ? $home . '/gymapp-config-' . Config::siteKey() . '.php' : __DIR__ . '/config.php';
 $checks['Config location writable'] = is_writable(dirname($configPath));
 $allOk = !in_array(false, $checks, true);
 $checkHtml = '<div class="box">' . implode('<br>', array_map(fn($k, $v) => ($v ? '<span class="ok">✓</span> ' : '<span class="bad">✗</span> ') . $k, array_keys($checks), $checks)) . '</div>';
