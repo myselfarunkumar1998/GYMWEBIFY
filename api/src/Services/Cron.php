@@ -33,6 +33,7 @@ final class Cron
             $log['messages_sent'] = Messenger::dispatch(200);
             $log['webhooks_delivered'] = Webhooks::deliver(50);
 
+            $log['gyms_auto_suspended'] = Subscriptions::suspendLapsed();
             $gyms = DB::all("SELECT id FROM gyms WHERE status <> 'suspended'");
             if ($force || self::due('hourly', 3300)) {
                 foreach ($gyms as $g) {
@@ -48,6 +49,7 @@ final class Cron
                 DB::run('DELETE FROM otp_codes WHERE expires_at < NOW() - INTERVAL 1 DAY');
             }
             if ($force || self::due('daily_morning', 0, Config::get('cron.morning_time', '08:00:00'))) {
+                $log['subscription_reminders'] = Subscriptions::remind();
                 foreach ($gyms as $g) {
                     $id = (int)$g['id'];
                     self::asGym($id);

@@ -9,19 +9,21 @@ export default function Platform() {
   const s = useStaff();
   const { data, reload } = useApi('/platform/gyms');
   const [add, setAdd] = useState(false);
+  const [pw, setPw] = useState(false);
   const { run } = useAction();
   return (
     <div className="content" style={{ margin: '0 auto' }}>
       <header className="topbar"><div className="col gap4"><h1>Platform console</h1><span className="muted">{data?.length ?? '…'} gyms · signed in as {s.user.email}</span></div>
-        <div className="row"><button className="btn primary" onClick={() => setAdd(true)}>+ New gym</button><button className="btn" onClick={s.logout}>Sign out</button></div></header>
+        <div className="row"><button className="btn primary" onClick={() => setAdd(true)}>+ New gym</button><button className="btn" onClick={() => setPw(true)}>Change password</button><button className="btn" onClick={s.logout}>Sign out</button></div></header>
+      <p className="muted small" style={{ margin: '0 0 12px' }}>Gyms are suspended automatically when "Paid till" has passed by more than the grace days. Owners get email reminders 7, 3 and 1 days before. Extending a gym that was suspended for non-payment reactivates it.</p>
       {!data ? <Loading /> : (
         <section className="card"><div className="tablebox"><table className="t" style={{ minWidth: 900 }}>
           <thead><tr><th>Gym</th><th>Owner</th><th>Members</th><th>Branches</th><th>Last check-in</th><th>Plan</th><th>Paid till</th><th>Status</th><th></th></tr></thead>
           <tbody>{data.map((g) => (
             <tr key={g.id}><td style={{ fontWeight: 600 }}>{g.name}<br /><a className="small" href={`/g/${g.slug}`} target="_blank" rel="noreferrer">/g/{g.slug}</a></td><td className="small">{g.owner_email}</td><td>{g.members}</td><td>{g.branches}</td>
               <td className="small">{g.last_checkin ? dateTime(g.last_checkin) : '—'}</td><td>{titleCase(g.subscription_plan || '')}</td>
-              <td className={g.subscription_until && g.subscription_until < new Date().toISOString().slice(0, 10) ? 'warn' : ''}>{date(g.subscription_until)}</td>
-              <td><Pill tone={g.status === 'active' ? undefined : 'warn'}>{titleCase(g.status)}</Pill></td>
+              <td className={g.days_left !== null && g.days_left <= 7 ? 'warn' : ''}>{date(g.subscription_until)}{g.days_left !== null && g.days_left <= 7 && <div className="small">{g.days_left < 0 ? `${-g.days_left} days overdue` : g.days_left === 0 ? 'ends today' : `${g.days_left} days left`}</div>}</td>
+              <td><Pill tone={g.status === 'active' ? undefined : 'warn'}>{g.status === 'suspended' && Number(g.auto_suspended) ? 'Suspended (unpaid)' : titleCase(g.status)}</Pill></td>
               <td className="r" style={{ whiteSpace: 'nowrap' }}>
                 <button className="btn sm" onClick={async () => { const until = window.prompt('Paid till (YYYY-MM-DD)', g.subscription_until || ''); if (until) { await run(() => put('/platform/gyms/' + g.id, { subscription_until: until }), 'Updated'); reload(); } }}>Extend</button>{' '}
                 <button className={'btn sm ' + (g.status === 'suspended' ? 'ghost' : 'danger')} onClick={async () => { await run(() => put('/platform/gyms/' + g.id, { status: g.status === 'suspended' ? 'active' : 'suspended' }), 'Updated'); reload(); }}>{g.status === 'suspended' ? 'Reactivate' : 'Suspend'}</button>
@@ -29,6 +31,7 @@ export default function Platform() {
         </table></div></section>
       )}
       {add && <NewGym onClose={() => setAdd(false)} onDone={() => { setAdd(false); reload(); }} />}
+      {pw && <ChangePassword onClose={() => setPw(false)} />}
     </div>
   );
 }
@@ -52,6 +55,27 @@ function NewGym({ onClose, onDone }) {
         <Input label="Paid till" type="date" value={f.subscription_until} onChange={set('subscription_until')} />
       </div>
       <Input label="Address" value={f.address} onChange={set('address')} />
+    </Modal>
+  );
+}
+
+function ChangePassword({ onClose }) {
+  const [f, setF] = useState({ current: '', password: '', confirm: '' });
+  const { run, busy, fields } = useAction();
+  const [err, setErr] = useState('');
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const save = async () => {
+    if (f.password !== f.confirm) { setErr('The new passwords do not match'); return; }
+    setErr('');
+    const r = await run(() => post('/auth/password', { current: f.current, password: f.password }), 'Password changed');
+    if (r) onClose();
+  };
+  return (
+    <Modal title="Change password" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={busy} onClick={save}>Save</button></>}>
+      <Input label="Current password" type="password" autoComplete="current-password" value={f.current} onChange={set('current')} error={fields.current} />
+      <Input label="New password" type="password" autoComplete="new-password" value={f.password} onChange={set('password')} error={fields.password} />
+      <Input label="Repeat new password" type="password" autoComplete="new-password" value={f.confirm} onChange={set('confirm')} error={err} />
+      <p className="muted small">Use at least 10 characters with letters and numbers. Other devices signed in as you are signed out.</p>
     </Modal>
   );
 }

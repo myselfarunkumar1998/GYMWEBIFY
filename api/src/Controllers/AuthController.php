@@ -57,7 +57,8 @@ final class AuthController extends Base
         return [
             'user' => ['id' => (int)$u['id'], 'name' => $u['name'], 'email' => $u['email'], 'role' => $u['role'], 'branch_id' => $u['branch_id'] ? (int)$u['branch_id'] : null, 'language' => $u['language'] ?? 'en'],
             'permissions' => $perms,
-            'gym' => $gym ? ['id' => (int)$gym['id'], 'name' => $gym['name'], 'slug' => $gym['slug'], 'logo_url' => $gym['logo_url'], 'gstin' => $gym['gstin'], 'default_language' => $gym['default_language'], 'status' => $gym['status']] : null,
+            'gym' => $gym ? ['id' => (int)$gym['id'], 'name' => $gym['name'], 'slug' => $gym['slug'], 'logo_url' => $gym['logo_url'], 'gstin' => $gym['gstin'], 'default_language' => $gym['default_language'], 'status' => $gym['status'],
+                'subscription_until' => $gym['subscription_until'], 'grace_days' => \App\Services\Subscriptions::graceDays(), 'is_demo' => !empty($gym['settings']['is_demo'])] : null,
             'branches' => $gym ? DB::all('SELECT id, name, capacity FROM branches WHERE gym_id = ? AND is_active = 1 ORDER BY id', [$gym['id']]) : [],
             'rules' => $gym ? ['joining_fee' => (float)($gym['settings']['rules']['joining_fee'] ?? 0), 'prices_include_gst' => (bool)($gym['settings']['prices_include_gst'] ?? false),
                 'grace_days' => (int)($gym['settings']['rules']['grace_days'] ?? 3), 'freeze_min_days' => (int)($gym['settings']['rules']['freeze_min_days'] ?? 7), 'waiver_text' => $gym['settings']['waiver_text'] ?? ''] : null,

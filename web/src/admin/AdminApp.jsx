@@ -3,6 +3,7 @@ import { NavLink, Route, Routes, useLocation, Navigate } from 'react-router-dom'
 import { useStaff } from '../lib/session.jsx';
 import { useI18n, LangToggle } from '../lib/i18n.jsx';
 import { Icon, Loading, useApi, usePoll } from '../components/ui.jsx';
+import { date } from '../lib/format.js';
 
 const Dashboard = lazy(() => import('./Dashboard.jsx'));
 const MembersList = lazy(() => import('./MembersList.jsx'));
@@ -85,6 +86,7 @@ export default function AdminApp() {
           <span style={{ fontFamily: 'var(--display)', fontWeight: 600 }}>{s.gym.name}</span>
         </div>
         {s.gym.status === 'suspended' && <div className="banner">This account is suspended.</div>}
+        <SubscriptionBanner s={s} />
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route index element={<Dashboard notes={notes} />} />
@@ -111,4 +113,17 @@ export default function AdminApp() {
       </main>
     </div>
   );
+}
+
+/** Tells owners and managers that the GymOS subscription is about to end, or has ended and is in grace. */
+function SubscriptionBanner({ s }) {
+  const until = s.gym.subscription_until;
+  if (!until || s.gym.is_demo || !['owner', 'manager'].includes(s.user.role)) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const end = new Date(until + 'T00:00:00');
+  const days = Math.round((end - today) / 86400000);
+  if (days > 7) return null;
+  if (days >= 0) return <div className="banner" style={{ marginBottom: 12 }}>Your GymOS subscription ends {days === 0 ? 'today' : `on ${date(until)}`}. Please renew to avoid interruption.</div>;
+  const off = new Date(end); off.setDate(off.getDate() + (s.gym.grace_days ?? 3) + 1);
+  return <div className="banner" style={{ marginBottom: 12 }}>Your GymOS subscription ended on {date(until)}. The account will be suspended on {date(off.toISOString().slice(0, 10))} unless it is renewed.</div>;
 }

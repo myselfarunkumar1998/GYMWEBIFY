@@ -12,6 +12,7 @@ final class PlatformController extends Base
     public function gyms(Request $req): array
     {
         return DB::all("SELECT g.id, g.name, g.slug, g.status, g.subscription_plan, g.subscription_until, g.created_at, g.phone, g.email,
+            DATEDIFF(g.subscription_until, CURDATE()) days_left, JSON_UNQUOTE(JSON_EXTRACT(g.settings, '$.auto_suspended')) IN ('true', '1') auto_suspended,
             (SELECT COUNT(*) FROM members m WHERE m.gym_id = g.id AND m.deleted_at IS NULL) members,
             (SELECT COUNT(*) FROM branches b WHERE b.gym_id = g.id) branches,
             (SELECT MAX(s.in_at) FROM attendance_sessions s WHERE s.gym_id = g.id) last_checkin,
@@ -38,7 +39,15 @@ final class PlatformController extends Base
         $id = $req->id();
         if (!DB::val('SELECT id FROM gyms WHERE id = ?', [$id])) throw HttpException::notFound('Gym not found');
         $d = V::check($req->json(), ['status' => 'nullable|in:active,suspended,trial', 'subscription_plan' => 'nullable|in:starter,standard,multi_branch', 'subscription_until' => 'nullable|date']);
-        DB::update('gyms', $d, ['id' => $id]);
+        $d = array_filter($d, fn ($v) => $v !== null);
+        $cur = DB::one('SELECT status, settings FROM gyms WHERE id = ?', [$id]);
+        $auto = !empty((json_decode($cur['settings'] ?? '{}', true) ?: [])['auto_suspended']);
+        // Extending a gym that was suspended automatically for non-payment reactivates it.
+        if (!isset($d['status']) && $auto && $cur['status'] === 'suspended' && !empty($d['subscription_until']) && $d['subscription_until'] >= date('Y-m-d')) $d['status'] = 'active';
+        if ($d) DB::update('gyms', $d, ['id' => $id]);
+        // Any explicit status change by the platform admin clears the automatic-suspension marker.
+        if (isset($d['status'])) DB::run("UPDATE gyms SET settings = JSON_REMOVE(COALESCE(settings, JSON_OBJECT()), '$.auto_suspended') WHERE id = ?", [$id]);
+        Util::forgetGym();
         if (($d['status'] ?? null) === 'suspended') DB::run('DELETE FROM auth_sessions WHERE gym_id = ?', [$id]);
         Util::audit('platform.gym_update', 'gym', $id, $d);
         return ['ok' => true];

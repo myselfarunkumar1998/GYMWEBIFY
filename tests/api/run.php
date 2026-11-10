@@ -538,6 +538,39 @@ test('platform console: only platform admins; suspension locks the gym out', fun
     $c = new Client('10.7.0.2');
     status($c->post('/api/auth/login', ['email' => 'owner@other.gym', 'password' => 'Other@12345']), 403, 'suspended gym cannot log in');
     $pa->put('/api/platform/gyms/' . $other['gym_id'], ['status' => 'active']);
+
+    // Lapsed subscription: suspended automatically by cron after the grace days, reactivated by extending.
+    $gid = $other['gym_id'];
+    q("UPDATE gyms SET subscription_until = CURDATE() - INTERVAL 10 DAY WHERE id = ?", [$gid]);
+    q("UPDATE gyms SET subscription_until = CURDATE() + INTERVAL 3 DAY WHERE JSON_UNQUOTE(JSON_EXTRACT(settings, '$.is_demo')) IN ('true', '1')");
+    $cronCmd = 'GYM_DB=gymapp_test GYM_URL=' . BASE . ' php ' . escapeshellarg(dirname(__DIR__, 2) . '/api/cron.php') . ' --force 2>&1';
+    shell_exec($cronCmd);
+    ok(q1('SELECT status FROM gyms WHERE id = ?', [$gid]) === 'suspended', 'lapsed gym suspended by cron');
+    ok(q1("SELECT status FROM gyms WHERE JSON_UNQUOTE(JSON_EXTRACT(settings, '$.is_demo')) IN ('true', '1')") === 'active', 'demo gym never auto-suspended');
+    status((new Client('10.7.0.3'))->post('/api/auth/login', ['email' => 'owner@other.gym', 'password' => 'Other@12345']), 403, 'auto-suspended gym cannot log in');
+    $row = array_values(array_filter($pa->get('/api/platform/gyms')['data'], fn ($g) => (int)$g['id'] === (int)$gid))[0];
+    ok((int)$row['auto_suspended'] === 1 && (int)$row['days_left'] === -10, 'console shows unpaid suspension and days overdue');
+    $pa->put('/api/platform/gyms/' . $gid, ['subscription_until' => date('Y-m-d', strtotime('+30 days'))]);
+    ok(q1('SELECT status FROM gyms WHERE id = ?', [$gid]) === 'active', 'extending an unpaid-suspended gym reactivates it');
+    // Manual suspension is not undone by extending.
+    $pa->put('/api/platform/gyms/' . $gid, ['status' => 'suspended']);
+    $pa->put('/api/platform/gyms/' . $gid, ['subscription_until' => date('Y-m-d', strtotime('+60 days'))]);
+    ok(q1('SELECT status FROM gyms WHERE id = ?', [$gid]) === 'suspended', 'manual suspension stays after extend');
+    $pa->put('/api/platform/gyms/' . $gid, ['status' => 'active']);
+    // Reminder email to the owner 7 days before.
+    q("UPDATE gyms SET subscription_until = CURDATE() + INTERVAL 7 DAY WHERE id = ?", [$gid]);
+    q("DELETE FROM cron_runs");
+    shell_exec($cronCmd);
+    ok((int)q1("SELECT COUNT(*) FROM messages WHERE gym_id = ? AND channel = 'email' AND to_addr = 'owner@other.gym' AND body LIKE '%subscription%'", [$gid]) >= 1, 'owner gets renewal reminder email');
+    ok((int)q1("SELECT COUNT(*) FROM messages WHERE channel = 'email' AND body LIKE '%GymOS subscription%' AND gym_id IN (SELECT id FROM gyms WHERE JSON_UNQUOTE(JSON_EXTRACT(settings, '$.is_demo')) IN ('true', '1'))") === 0, 'demo gym gets no subscription emails');
+    $me = (new Client('10.7.0.4'))->login('owner@other.gym', 'Other@12345')->get('/api/auth/me');
+    ok(($me['data']['gym']['subscription_until'] ?? null) === date('Y-m-d', strtotime('+7 days')), 'owner session carries paid-till date for the banner');
+
+    // Platform admin can change own password.
+    $bad = $pa->post('/api/auth/password', ['current' => 'wrong', 'password' => 'NewPlatform@123']);
+    status($bad, 422, 'password change needs the current password');
+    status($pa->post('/api/auth/password', ['current' => 'Platform@12345', 'password' => 'NewPlatform@123']), 200, 'platform admin changes password');
+    status((new Client('10.7.0.5'))->post('/api/auth/login', ['email' => 'platform@test.gym', 'password' => 'NewPlatform@123']), 200, 'new platform password works');
 });
 
 test('real (non-demo) gyms never get demo shortcuts', function () use ($otherOwner) {
