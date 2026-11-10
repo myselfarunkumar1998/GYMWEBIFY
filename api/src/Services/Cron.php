@@ -66,6 +66,8 @@ final class Cron
                     $log["gym{$g['id']}.churn_scored"] = Churn::run((int)$g['id']);
                 }
             }
+            // Send what this run just queued (reminders, birthdays) without waiting for the next run.
+            $log['messages_sent'] += Messenger::dispatch(200);
         } finally {
             DB::val("SELECT RELEASE_LOCK('gymapp_cron')");
             Auth::reset();

@@ -12,7 +12,7 @@ $p = fn(string $perm, array $extra = []) => ['perm' => $perm] + $extra;
 
 // Public
 $r->get('/health', [C\PublicController::class, 'health'], $none);
-$r->get('/public/gym/{slug:s}', [C\PublicController::class, 'gym'], $none);
+$r->get('/public/gym/{slug:s}', [C\PublicController::class, 'show'], $none);
 $r->post('/public/gym/{slug:s}/trial', [C\PublicController::class, 'trial'], $none + ['rate' => ['trial', 5, 3600]]);
 $r->get('/public/demo-pay/{id}', [C\PublicController::class, 'demoPay'], $none);
 $r->post('/public/demo-pay/{id}', [C\PublicController::class, 'demoPay'], $none + ['rate' => ['demopay', 20, 3600]]);

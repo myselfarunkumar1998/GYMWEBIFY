@@ -17,7 +17,7 @@ final class Util
             'entity' => $entity,
             'entity_id' => $entityId,
             'details' => is_array($details) ? substr(json_encode($details, JSON_UNESCAPED_UNICODE), 0, 1000) : $details,
-            'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
+            'ip' => (($h = Config::get('client_ip_header')) && !empty($_SERVER[$h])) ? substr((string)$_SERVER[$h], 0, 45) : ($_SERVER['REMOTE_ADDR'] ?? null),
         ]);
     }
 

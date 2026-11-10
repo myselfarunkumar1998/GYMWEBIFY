@@ -32,7 +32,15 @@ final class Attendance
             $log = fn(string $result, ?string $reason) => DB::run('INSERT IGNORE INTO punch_log (gym_id, branch_id, device_id, device_user_id, member_id, user_id, punched_at, method, result, reason) VALUES (?,?,?,?,?,?,?,?,?,?)',
                 [$gymId, $branchId, $device['id'] ?? null, $deviceUserId, $member['id'] ?? null, $user['id'] ?? null, $at, $method, $result, $reason]);
 
+            // Devices resend logs after reconnecting: the same punch must never be counted twice.
+            if ($device && $deviceUserId !== null && DB::val('SELECT id FROM punch_log WHERE device_id = ? AND device_user_id = ? AND punched_at = ?', [$device['id'], $deviceUserId, $at])) {
+                return ['result' => 'ignored', 'reason' => 'Already received', 'session_id' => null, 'name' => $name, 'duration_min' => null];
+            }
             $last = DB::val("SELECT MAX(GREATEST(in_at, COALESCE(out_at, in_at))) FROM attendance_sessions WHERE gym_id = ? AND $col = ?", [$gymId, $subjectId]);
+            if ($last && strtotime($at) < strtotime((string)$last) - self::DEBOUNCE_SEC) {
+                $log('ignored', 'Older than the last recorded punch');
+                return ['result' => 'ignored', 'reason' => 'Older than the last recorded punch', 'session_id' => null, 'name' => $name, 'duration_min' => null];
+            }
             if ($last && abs(strtotime($at) - strtotime((string)$last)) < self::DEBOUNCE_SEC) {
                 $log('ignored', 'Duplicate punch');
                 return ['result' => 'ignored', 'reason' => 'Duplicate punch', 'session_id' => null, 'name' => $name, 'duration_min' => null];

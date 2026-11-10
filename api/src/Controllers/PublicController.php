@@ -17,7 +17,7 @@ final class PublicController extends Base
         return $g;
     }
 
-    public function gym(Request $req): array
+    public function show(Request $req): array
     {
         $g = $this->gymBySlug($req->params['slug']);
         $id = (int)$g['id'];

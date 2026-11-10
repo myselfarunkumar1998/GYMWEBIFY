@@ -54,7 +54,13 @@ final class Request
     public function q(string $key, mixed $default = null): mixed { return $this->query[$key] ?? $default; }
     public function id(string $name = 'id'): int { return (int)($this->params[$name] ?? 0); }
 
-    public function ip(): string { return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'; }
+    /** Client IP. Behind Cloudflare set client_ip_header to HTTP_CF_CONNECTING_IP in the config. */
+    public function ip(): string
+    {
+        $h = \App\Core\Config::get('client_ip_header');
+        if ($h && !empty($_SERVER[$h]) && filter_var($_SERVER[$h], FILTER_VALIDATE_IP)) return $_SERVER[$h];
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
     public function userAgent(): string { return substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 250); }
 
     public function page(): array
