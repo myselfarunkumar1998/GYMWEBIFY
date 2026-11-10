@@ -11,6 +11,7 @@ export default function MemberLogin({ slug, onLogin }) {
   const [code, setCode] = useState('');
   const [step, setStep] = useState('phone');
   const [demo, setDemo] = useState(null);
+  const [via, setVia] = useState(null);
   const { run, busy, fields } = useAction();
   useEffect(() => { get('/public/gym/' + slug).then(setGym).catch(() => setGym(false)); }, [slug]);
   if (gym === false) return <div className="phone-body"><h1>Gym not found</h1><span className="muted">Check the link your gym shared.</span></div>;
@@ -18,7 +19,7 @@ export default function MemberLogin({ slug, onLogin }) {
   const send = async (e) => {
     e.preventDefault();
     const r = await run(() => post('/m/auth/otp', { gym: slug, phone }));
-    if (r) { setStep('code'); setDemo(r.demo_code || null); }
+    if (r) { setStep('code'); setDemo(r.demo_code || null); setVia(r.via); }
   };
   const verify = async (e) => {
     e.preventDefault();
@@ -52,6 +53,9 @@ export default function MemberLogin({ slug, onLogin }) {
           <form onSubmit={verify} className="col gap12">
             <Input label={t('Enter the 6-digit code')} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} error={fields.code} autoFocus style={{ height: 52, fontSize: 22, letterSpacing: 6 }} />
             {demo && <div className="banner info">Demo mode: your code is <b>{demo}</b></div>}
+            {!demo && via === 'sms' && <span className="small muted">We sent the code by SMS.</span>}
+            {!demo && via === 'email' && <span className="small muted">We sent the code to your email.</span>}
+            {!demo && via === 'none' && <div className="banner">This gym cannot send codes yet. Please ask the front desk.</div>}
             <button className="btn primary block" style={{ height: 52, fontSize: 16 }} disabled={busy || code.length !== 6}>{t('Verify')}</button>
             <button type="button" className="btn block" onClick={() => { setStep('phone'); setCode(''); }}>Change number</button>
           </form>

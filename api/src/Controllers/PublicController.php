@@ -61,9 +61,8 @@ final class PublicController extends Base
     /** Demo-mode stand-in for a Razorpay payment page. Disabled outside demo mode. */
     public function demoPay(Request $req): array
     {
-        if (!Config::get('demo_mode')) throw HttpException::notFound();
         $inv = DB::one('SELECT * FROM invoices WHERE id = ?', [$req->id()]);
-        if (!$inv) throw HttpException::notFound('Invoice not found');
+        if (!$inv || !Util::isDemoGym((int)$inv['gym_id']) || \App\Services\Razorpay::configured((int)$inv['gym_id'])) throw HttpException::notFound();
         Auth::$gymId = (int)$inv['gym_id'];
         if ($req->method === 'POST' && (float)$inv['balance'] > 0) {
             Billing::recordPayment((int)$inv['gym_id'], (int)$inv['id'], (float)$inv['balance'], 'online', 'DEMO-UPI', 'demo_' . $inv['id'] . '_' . time());

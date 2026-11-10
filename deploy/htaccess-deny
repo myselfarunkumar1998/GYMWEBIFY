@@ -1,0 +1,5 @@
+# Private folder: never served over HTTP.
+Require all denied
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>

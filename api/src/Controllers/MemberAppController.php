@@ -27,9 +27,23 @@ final class MemberAppController extends Base
         $code = (string)random_int(100000, 999999);
         DB::run('UPDATE otp_codes SET used_at = NOW() WHERE gym_id = ? AND phone = ? AND used_at IS NULL', [$g['id'], $d['phone']]);
         DB::insert('otp_codes', ['gym_id' => $g['id'], 'phone' => $d['phone'], 'code_hash' => hash_hmac('sha256', $code, (string)Config::get('app_key')), 'expires_at' => date('Y-m-d H:i:s', time() + 600)]);
-        $mid = Messenger::template((int)$g['id'], 'otp', $m, ['code' => $code], ['force' => true]);
+        $gid = (int)$g['id'];
+        $text = Messenger::render(Messenger::DEFAULTS['otp'][$m['language']] ?? Messenger::DEFAULTS['otp']['en'], ['code' => $code, 'gym' => $g['name']]);
+        if (Messenger::whatsappConfigured($gid) || Util::isDemoGym($gid)) {
+            $mid = Messenger::template($gid, 'otp', $m, ['code' => $code], ['force' => true]);
+            $out['via'] = 'whatsapp';
+        } elseif (Util::setting('integrations.sms_url', null, $gid)) {
+            $mid = Messenger::queue($gid, 'sms', $m['phone'], $text, ['member_id' => (int)$m['id'], 'tkey' => 'otp']);
+            $out['via'] = 'sms';
+        } elseif ($m['email']) {
+            $mid = Messenger::queue($gid, 'email', $m['email'], $text, ['member_id' => (int)$m['id'], 'tkey' => 'otp', 'payload' => ['subject' => 'Your login code']]);
+            $out['via'] = 'email';
+        } else {
+            $mid = null;
+            $out['via'] = 'none';
+        }
         if ($mid) Messenger::dispatch(1, $mid);
-        if (Config::get('demo_mode') && !Messenger::whatsappConfigured((int)$g['id'])) $out['demo_code'] = $code;
+        if (Util::isDemoGym($gid) && !Messenger::whatsappConfigured($gid)) $out['demo_code'] = $code;
         return $out;
     }
 
@@ -64,7 +78,7 @@ final class MemberAppController extends Base
             'goal' => $m['goal'], 'leaderboard_opt_in' => (bool)$m['leaderboard_opt_in'], 'waiver_signed' => (bool)$m['waiver_signed_at'], 'credit_balance' => (float)$m['credit_balance'],
             'fingerprint_enrolled' => (bool)$m['fingerprint_enrolled'], 'face_enrolled' => (bool)$m['face_enrolled'], 'strava_connected' => (bool)$m['strava_tokens'], 'has_photo' => (bool)$m['photo_path']],
             'gym' => ['name' => $g['name'], 'slug' => $g['slug'], 'phone' => $g['phone'], 'logo_url' => $g['logo_url'], 'waiver_text' => $g['settings']['waiver_text'] ?? null],
-            'vapid_public' => Config::get('vapid.public'), 'online_payments' => Razorpay::configured((int)$g['id']) || (bool)Config::get('demo_mode')];
+            'vapid_public' => Config::get('vapid.public'), 'online_payments' => Razorpay::configured((int)$g['id']) || Util::isDemoGym((int)$g['id'])];
     }
 
     public function updatePrefs(Request $req): array
@@ -352,7 +366,7 @@ final class MemberAppController extends Base
         $inv = DB::one('SELECT * FROM invoices WHERE id = ? AND member_id = ?', [$d['invoice_id'], $this->mid()]);
         if (!$inv) throw HttpException::notFound('Invoice not found');
         if (!empty($d['demo'])) {
-            if (!Config::get('demo_mode') || Razorpay::configured($this->gym())) throw HttpException::bad('Demo payments are off');
+            if (!Util::isDemoGym($this->gym()) || Razorpay::configured($this->gym())) throw HttpException::bad('Demo payments are off');
             if ((float)$inv['balance'] > 0) Billing::recordPayment($this->gym(), (int)$inv['id'], (float)$inv['balance'], 'online', 'DEMO-UPI', 'demo_' . $inv['id'] . '_' . bin2hex(random_bytes(4)));
         } else {
             if (empty($d['razorpay_order_id']) || empty($d['razorpay_payment_id']) || empty($d['razorpay_signature'])) throw HttpException::bad('Missing payment details');

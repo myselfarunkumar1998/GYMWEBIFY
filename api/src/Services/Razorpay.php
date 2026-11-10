@@ -39,7 +39,7 @@ final class Razorpay
         $existing = DB::one("SELECT * FROM payment_links WHERE invoice_id = ? AND status = 'created' AND amount = ? ORDER BY id DESC LIMIT 1", [$invoiceId, $inv['balance']]);
         if ($existing && $existing['short_url']) return $existing;
 
-        if (!self::configured($gymId) && Config::get('demo_mode')) {
+        if (!self::configured($gymId) && Util::isDemoGym($gymId)) {
             $url = rtrim((string)Config::get('app_url'), '/') . '/pay/demo/' . $invoiceId;
             $id = DB::insert('payment_links', ['gym_id' => $gymId, 'invoice_id' => $invoiceId, 'gateway_link_id' => 'demo_' . $invoiceId . '_' . time(), 'short_url' => $url, 'amount' => $inv['balance']]);
             return DB::one('SELECT * FROM payment_links WHERE id = ?', [$id]);
@@ -62,7 +62,7 @@ final class Razorpay
         $inv = DB::one('SELECT * FROM invoices WHERE id = ? AND gym_id = ?', [$invoiceId, $gymId]);
         if (!$inv || (float)$inv['balance'] <= 0) throw HttpException::bad('Nothing is due on this invoice');
         if (!self::configured($gymId)) {
-            if (Config::get('demo_mode')) return ['demo' => true, 'invoice_id' => $invoiceId, 'amount' => (float)$inv['balance']];
+            if (Util::isDemoGym($gymId)) return ['demo' => true, 'invoice_id' => $invoiceId, 'amount' => (float)$inv['balance']];
             throw HttpException::bad('Online payments are not set up at this gym yet. Please pay at the front desk.');
         }
         $res = self::call($gymId, 'POST', '/orders', ['amount' => (int)round((float)$inv['balance'] * 100), 'currency' => 'INR', 'receipt' => 'inv_' . $invoiceId,
@@ -86,7 +86,7 @@ final class Razorpay
         $ms = DB::one('SELECT ms.*, p.name, p.price, p.duration_days, m.name AS member_name, m.phone FROM memberships ms JOIN plans p ON p.id = ms.plan_id JOIN members m ON m.id = ms.member_id WHERE ms.id = ? AND ms.gym_id = ?', [$membershipId, $gymId]);
         if (!$ms) throw HttpException::notFound('Membership not found');
         if (!self::configured($gymId)) {
-            if (Config::get('demo_mode')) { DB::update('memberships', ['autopay' => 1], ['id' => $membershipId]); return ['demo' => true]; }
+            if (Util::isDemoGym($gymId)) { DB::update('memberships', ['autopay' => 1], ['id' => $membershipId]); return ['demo' => true]; }
             throw HttpException::bad('AutoPay needs Razorpay keys in Settings › Integrations.');
         }
         $months = max(1, (int)round($ms['duration_days'] / 30));

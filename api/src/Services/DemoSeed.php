@@ -40,6 +40,7 @@ final class DemoSeed
         $vel = DB::insert('branches', ['gym_id' => $g, 'name' => 'Velachery', 'address' => '45, 100 Feet Road, Velachery, Chennai 600042', 'open_time' => '05:30:00', 'close_time' => '22:00:00',
             'staffed_from' => '06:00:00', 'staffed_to' => '21:30:00', 'capacity' => 50, 'phone' => '9840054321']);
         $s = Util::gym($g)['settings'];
+        $s['is_demo'] = true;
         $s['google_review_url'] = 'https://g.page/r/demo-fitzone/review';
         $s['website']['about'] = 'Strength, cardio and group classes in Anna Nagar and Velachery. Fingerprint entry, trainers on every shift, and an app to track your workouts.';
         DB::update('gyms', ['settings' => json_encode($s)], ['id' => $g]);

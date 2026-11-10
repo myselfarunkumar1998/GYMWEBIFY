@@ -51,6 +51,16 @@ final class Util
 
     public static function forgetGym(): void { self::$gymCache = []; }
 
+    /**
+     * Demo behaviour (on-screen OTP, simulated WhatsApp, demo payments) is allowed only for a gym
+     * marked as a demo AND when the site config allows demo mode. Real gyms never get it.
+     */
+    public static function isDemoGym(?int $gymId = null): bool
+    {
+        if (!Config::get('demo_mode')) return false;
+        try { return !empty(self::gym($gymId)['settings']['is_demo']); } catch (\Throwable) { return false; }
+    }
+
     public static function setting(string $key, mixed $default = null, ?int $gymId = null): mixed
     {
         $s = self::gym($gymId)['settings'];

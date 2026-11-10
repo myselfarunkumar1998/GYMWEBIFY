@@ -120,7 +120,7 @@ final class Messenger
     {
         $gymId = (int)$m['gym_id'];
         if (!self::whatsappConfigured($gymId)) {
-            if (Config::get('demo_mode')) return [true, 'simulated', null];
+            if (Util::isDemoGym($gymId)) return [true, 'simulated', null];
             return [false, null, 'WhatsApp is not connected'];
         }
         $to = '91' . substr(preg_replace('/\D/', '', $m['to_addr']), -10);
@@ -144,7 +144,7 @@ final class Messenger
     private static function sendSms(array $m): array
     {
         $tpl = Util::setting('integrations.sms_url', null, (int)$m['gym_id']);
-        if (!$tpl) return Config::get('demo_mode') ? [true, 'simulated', null] : [false, null, 'SMS gateway is not connected'];
+        if (!$tpl) return Util::isDemoGym((int)$m['gym_id']) ? [true, 'simulated', null] : [false, null, 'SMS gateway is not connected'];
         $key = Util::secret('sms_key', (int)$m['gym_id']) ?? '';
         $url = strtr($tpl, ['{to}' => rawurlencode('91' . substr($m['to_addr'], -10)), '{msg}' => rawurlencode($m['body']), '{key}' => rawurlencode($key)]);
         [$code, $body] = Http::request('GET', $url);
@@ -159,7 +159,7 @@ final class Messenger
         $payload = $m['payload'] ? json_decode($m['payload'], true) : [];
         $subject = $payload['subject'] ?? $gym['name'];
         $headers = 'From: ' . mb_encode_mimeheader($gym['name']) . " <$from>\r\nReply-To: " . ($gym['email'] ?: $from) . "\r\nContent-Type: text/plain; charset=UTF-8\r\nMIME-Version: 1.0";
-        if (Config::get('demo_mode') && !Config::get('mail_enabled')) return [true, 'simulated', null];
+        if (Util::isDemoGym((int)$m['gym_id']) && !Config::get('mail_enabled')) return [true, 'simulated', null];
         $ok = mail($m['to_addr'], mb_encode_mimeheader($subject), $m['body'], $headers);
         return [$ok, null, $ok ? null : 'mail() failed'];
     }

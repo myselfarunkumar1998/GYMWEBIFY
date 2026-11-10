@@ -537,6 +537,23 @@ test('platform console: only platform admins; suspension locks the gym out', fun
     $pa->put('/api/platform/gyms/' . $other['gym_id'], ['status' => 'active']);
 });
 
+test('real (non-demo) gyms never get demo shortcuts', function () use ($otherOwner) {
+    $otherOwner = (new Client('10.8.0.9'))->login('owner@other.gym', 'Other@12345');
+    $r = $otherOwner->post('/api/members', ['name' => 'Real Member', 'phone' => '9666666666']);
+    status($r, 200, 'member in real gym');
+    $c = new Client('10.8.0.1');
+    $o = $c->post('/api/m/auth/otp', ['gym' => 'other-gym', 'phone' => '9666666666']);
+    status($o, 200, 'otp request');
+    ok(!isset($o['data']['demo_code']), 'no on-screen code for a real gym', $o['raw']);
+    eq($o['data']['via'] ?? null, 'none', 'reports that no channel is connected');
+    $inv = $otherOwner->post('/api/invoices', ['member_id' => $r['data']['id'], 'items' => [['description' => 'Test', 'rate' => 100]]]);
+    status((new Client('10.8.0.2'))->get('/api/public/demo-pay/' . $inv['data']['id']), 404, 'demo pay page off for real gym');
+    $msg = $otherOwner->post('/api/members/' . $r['data']['id'] . '/message', ['body' => 'hello']);
+    eq($msg['data']['status'] ?? null, 'failed', 'WhatsApp not simulated for a real gym');
+    $me = $otherOwner->get('/api/auth/me');
+    eq($me['data']['demo_mode'], false, 'demo flag off');
+});
+
 // ---------- report ----------
 printf("\n%d passed, %d failed in %.1fs\n", $pass, $fail, microtime(true) - $t0);
 foreach ($failures as $f) echo "  ✗ $f\n";

@@ -61,7 +61,7 @@ final class AuthController extends Base
             'branches' => $gym ? DB::all('SELECT id, name, capacity FROM branches WHERE gym_id = ? AND is_active = 1 ORDER BY id', [$gym['id']]) : [],
             'rules' => $gym ? ['joining_fee' => (float)($gym['settings']['rules']['joining_fee'] ?? 0), 'prices_include_gst' => (bool)($gym['settings']['prices_include_gst'] ?? false),
                 'grace_days' => (int)($gym['settings']['rules']['grace_days'] ?? 3), 'freeze_min_days' => (int)($gym['settings']['rules']['freeze_min_days'] ?? 7), 'waiver_text' => $gym['settings']['waiver_text'] ?? ''] : null,
-            'demo_mode' => (bool)Config::get('demo_mode'),
+            'demo_mode' => $gym ? Util::isDemoGym((int)$gym['id']) : false,
             'vapid_public' => Config::get('vapid.public'),
         ];
     }

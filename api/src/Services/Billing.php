@@ -207,8 +207,8 @@ final class Billing
         return '<!doctype html><html><head><meta charset="utf-8"><title>' . $e($inv['invoice_no']) . '</title><style>
 body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:32px;font-size:13px}h1{font-size:20px;margin:0}table{width:100%;border-collapse:collapse;margin-top:16px}
 th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}.r{text-align:right}.grid{display:flex;justify-content:space-between;gap:24px}.tot{width:300px;margin-left:auto}
-.badge{display:inline-block;padding:2px 8px;border:1px solid #111;border-radius:4px;font-size:11px}@media print{button{display:none}}</style></head><body>
-<button onclick="window.print()" style="float:right;padding:8px 16px">Print / Save PDF</button>
+.badge{display:inline-block;padding:2px 8px;border:1px solid #111;border-radius:4px;font-size:11px}@media print{.noprint{display:none}}</style></head><body>
+<p class="noprint" style="float:right;color:#555;font-size:12px">Use your browser\'s Print (Ctrl+P / Share › Print) to save as PDF</p>
 <div class="grid"><div><h1>' . $e($g['legal_name'] ?: $g['name']) . '</h1><div>' . $e($inv['branch_address'] ?: $g['address']) . '</div>' . ($g['gstin'] ? '<div>GSTIN: ' . $e($g['gstin']) . '</div>' : '') . '<div>' . $e($g['phone']) . '</div></div>
 <div class="r"><h1>' . $title . '</h1><div>No: ' . $e($inv['invoice_no']) . '</div><div>Date: ' . $e(date('d M Y', strtotime($inv['invoice_date']))) . '</div><div>Place of supply: ' . $e($inv['place_of_supply']) . '</div><div class="badge">' . $status . '</div></div></div>
 <p><b>Bill to:</b> ' . $e($inv['customer_name']) . ($inv['member_code'] ? ' (' . $e($inv['member_code']) . ')' : '') . ($inv['customer_gstin'] ? ' · GSTIN ' . $e($inv['customer_gstin']) : '') . '</p>

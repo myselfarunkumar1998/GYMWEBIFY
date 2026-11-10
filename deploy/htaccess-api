@@ -1,0 +1,13 @@
+# Only the entry points are reachable. Source, database files, uploads and logs are not.
+Options -Indexes
+<FilesMatch "\.(php|txt|lock|sql|json|md)$">
+  Require all denied
+</FilesMatch>
+<FilesMatch "^(index|adms|install|cron)\.php$">
+  Require all granted
+</FilesMatch>
+<IfModule mod_php.c>
+  php_flag display_errors off
+  php_value upload_max_filesize 8M
+  php_value post_max_size 10M
+</IfModule>

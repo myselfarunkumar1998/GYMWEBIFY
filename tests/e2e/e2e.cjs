@@ -12,7 +12,10 @@ async function step(name, fn) {
 }
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser0 = await chromium.launch();
+  // E2E_PROXY_HTTPS=1 tells Apache the request came over HTTPS (local test without a certificate).
+  const extra = process.env.E2E_PROXY_HTTPS ? { extraHTTPHeaders: { 'X-Forwarded-Proto': 'https' } } : {};
+  const browser = { newContext: (o = {}) => browser0.newContext({ ...extra, ...o }), close: () => browser0.close() };
   const errors = [];
   const watch = (page, who) => {
     page.on('pageerror', (e) => errors.push(`${who} pageerror: ${e.message}`));

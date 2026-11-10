@@ -1,0 +1,57 @@
+# ---- Gym app: Apache rules for public_html ----
+Options -Indexes -MultiViews
+DirectoryIndex index.html
+AddDefaultCharset UTF-8
+AddType application/manifest+json .webmanifest
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # eSSL / ZKTeco ADMS push protocol. Many devices only speak plain HTTP and cannot follow
+  # redirects, so this is handled first and [END] stops any further rewriting.
+  RewriteRule ^iclock/ api/adms.php [END,QSA]
+
+  # Force HTTPS for everything else.
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # API: real files (install.php, cron.php) are served directly; everything else goes to the router.
+  RewriteCond %{REQUEST_URI} ^/api/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^api/ api/index.php [L,QSA]
+
+  # Pass the Authorization header through to PHP (API keys).
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Single-page app: unknown paths load index.html.
+  RewriteCond %{REQUEST_URI} !^/api/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "same-origin"
+  Header always set Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=(self \"https://checkout.razorpay.com\")"
+  Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+  Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+  Header always setifempty Content-Security-Policy "default-src 'self'; script-src 'self' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  <FilesMatch "\.(js|css|woff2|png|svg)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "^(index\.html|sw\.js|.*\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml application/manifest+json
+</IfModule>
+
+# Never serve dotfiles, backups or source maps.
+<FilesMatch "(^\.|\.(bak|sql|log|map|md|key|lock)$)">
+  Require all denied
+</FilesMatch>
