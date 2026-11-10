@@ -12,9 +12,11 @@ async function step(name, fn) {
 }
 
 (async () => {
-  const browser0 = await chromium.launch();
+  const browser0 = await chromium.launch(process.env.E2E_BASE && process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY } } : {});
   // E2E_PROXY_HTTPS=1 tells Apache the request came over HTTPS (local test without a certificate).
   const extra = process.env.E2E_PROXY_HTTPS ? { extraHTTPHeaders: { 'X-Forwarded-Proto': 'https' } } : {};
+  // Hosts with bot filters (Bluehost ModSecurity) reject POSTs from the HeadlessChrome user agent.
+  if (process.env.E2E_UA) extra.userAgent = process.env.E2E_UA;
   const browser = { newContext: (o = {}) => browser0.newContext({ ...extra, ...o }), close: () => browser0.close() };
   const errors = [];
   const watch = (page, who) => {

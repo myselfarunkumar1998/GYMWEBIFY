@@ -34,7 +34,7 @@ Total time: about 20 minutes. You need cPanel access and your domain pointed at 
 
 The installer:
 - creates the tables
-- writes the config to `/home/CPANELUSER/gymapp-config.php`, which is outside `public_html`
+- writes the config to `/home/CPANELUSER/gymapp-config-<site-folder>.php`, which is outside `public_html`
 - generates encryption, cron and push keys
 - deletes the install key and locks itself
 
@@ -95,3 +95,11 @@ Test with one device before rolling out: check a punch IN and OUT appears in Che
 1. Upload the new zip.
 2. Extract it over `public_html`. Keep `api/uploads`. The config file is outside `public_html` and is not touched.
 3. Delete `api/INSTALL_KEY.txt` from the new files; the installer stays locked.
+
+## Bluehost bot filter (ModSecurity)
+
+Bluehost rejects POST requests from headless browsers with `406 Not Acceptable`. Real browsers, phones, eSSL devices and the Razorpay/Meta webhooks are not affected. To run the browser tests against a live site, pass a normal user agent:
+
+```bash
+E2E_BASE=https://YOUR-DOMAIN E2E_UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" node tests/e2e/e2e.cjs
+```
