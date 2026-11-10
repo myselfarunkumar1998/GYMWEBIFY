@@ -529,6 +529,9 @@ test('platform console: only platform admins; suspension locks the gym out', fun
     q("INSERT INTO users (gym_id, name, email, password_hash, role) VALUES (NULL, 'Platform', 'platform@test.gym', ?, 'platform_admin')", [password_hash('Platform@12345', PASSWORD_BCRYPT)]);
     $pa = (new Client('10.7.0.1'))->login('platform@test.gym', 'Platform@12345');
     $list = $pa->get('/api/platform/gyms');
+    $pme = $pa->get('/api/auth/me');
+    status($pme, 200, 'platform admin can load own session (console start-up)');
+    ok(($pme['data']['user']['role'] ?? '') === 'platform_admin', 'me reports platform_admin role');
     ok(count($list['data'] ?? []) === 2, 'sees both gyms');
     status($pa->get('/api/members'), 403, 'platform admin cannot browse a gym directly');
     $pa->put('/api/platform/gyms/' . $other['gym_id'], ['status' => 'suspended']);

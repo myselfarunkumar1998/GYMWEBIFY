@@ -32,6 +32,10 @@ final class Middleware
             case 'member':
                 if (!Auth::loadMember()) throw HttpException::unauth();
                 return;
+            case 'anystaff':
+                // Own-account endpoints (me, password, profile) work for gym staff and platform admins alike.
+                if (!Auth::loadStaff()) throw HttpException::unauth();
+                return;
             case 'platform':
                 if (!Auth::loadStaff()) throw HttpException::unauth();
                 Auth::require('platform');

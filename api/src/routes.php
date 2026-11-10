@@ -21,9 +21,9 @@ $r->get('/public/logo/{id}', [C\SettingsController::class, 'logo'], $none);
 // Staff auth
 $r->post('/auth/login', [C\AuthController::class, 'login'], $none + ['rate' => ['login', 20, 900]]);
 $r->post('/auth/logout', [C\AuthController::class, 'logout'], $none);
-$r->get('/auth/me', [C\AuthController::class, 'me']);
-$r->post('/auth/password', [C\AuthController::class, 'changePassword']);
-$r->put('/auth/profile', [C\AuthController::class, 'updateProfile']);
+$r->get('/auth/me', [C\AuthController::class, 'me'], ['auth' => 'anystaff']);
+$r->post('/auth/password', [C\AuthController::class, 'changePassword'], ['auth' => 'anystaff']);
+$r->put('/auth/profile', [C\AuthController::class, 'updateProfile'], ['auth' => 'anystaff']);
 $r->post('/auth/forgot', [C\AuthController::class, 'forgot'], $none + ['rate' => ['forgot', 5, 3600]]);
 $r->post('/auth/reset', [C\AuthController::class, 'reset'], $none + ['rate' => ['reset', 10, 3600]]);
 
